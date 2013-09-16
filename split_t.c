@@ -18,7 +18,7 @@
 //  IF YOU HAVE NO WAY OF WORKING WITH GPL, CONTACT ME.
 //-------------------------------------------------------------------------------
 #include <errno.h>
-#include <tap.h>
+#include "tap.h"
 #include "_hx.h"
 
 PAGENO  testv[][9] = {

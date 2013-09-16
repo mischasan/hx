@@ -18,7 +18,7 @@
 //  IF YOU HAVE NO WAY OF WORKING WITH GPL, CONTACT ME.
 //-------------------------------------------------------------------------------
 
-#include <tap.h>
+#include "tap.h"
 
 #include "_hx.h"
 #include "util.h"

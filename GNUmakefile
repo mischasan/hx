@@ -22,7 +22,6 @@
 
 #---------------- GLOBAL VARS:
 export hx       ?= .
-util            ?= ../util
 
 #---------------- PRIVATE VARS:
 hx.o            =  $(patsubst %,$(hx)/%, hx.o hxbuild.o hxcheck.o hxcreate.o hxdiag.o hxget.o hxlox.o hxname.o hxnext.o hxopen.o hxput.o hxref.o hxshape.o hxstat.o hxupd.o util.o)
@@ -59,8 +58,9 @@ $(hx)/libhx.a   : CPPFLAGS  += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 $(hx)/libhx.a   : $(hx.o)
 
 $(hx.tpgms)     : CFLAGS += $(Wno-unused-result)
+$(hx.tpgms)     : CPPFLAGS += -I$(hx)
 $(hx.tpgms)     : LDLIBS += -pthread
-$(hx.tpgms)     : $(hx)/hx_.so $(hx)/libhx.a $(util)/libtap.a
+$(hx.tpgms)     : $(hx)/hx_.so $(hx)/libhx.a $(hx)/tap.o
 
 $(hx.test)      : LD_LIBRARY_PATH := $(hx):$(LD_LIBRARY_PATH)
 $(hx.test)      : PATH := $(hx):$(PATH)
@@ -73,8 +73,8 @@ $(hx)/build_t.pass : $(hx)/data.tab
 $(hx)/basic_t.pass $(hx)/conc_t.pass $(hx)/many_t.pass  : $(hx)/chx
 
 $(hx)/hxshape.o : CFLAGS += -Wno-strict-aliasing
-$(hx)/%.i       : CPPFLAGS += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-$(hx.tpgms:%=%.o %.s): CPPFLAGS := -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -I$(util) $(filter-out -D_FORTIFY_SOURCE%, $(CPPFLAGS))
+$(hx)/%.i       : CPPFLAGS += -I$(hx) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+$(hx.tpgms:%=%.o %.s): CPPFLAGS := -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(filter-out -D_FORTIFY_SOURCE%, $(CPPFLAGS))
 
 -include $(hx)/*.d
 # vim: set nowrap :

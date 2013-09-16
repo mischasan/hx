@@ -20,7 +20,7 @@
 
 #include <errno.h>
 #include <sys/stat.h>
-#include <tap.h>
+#include "tap.h"
 
 #include "_hx.h"
 #include "hx_.h"

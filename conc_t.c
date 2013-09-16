@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include <tap.h>
+#include "tap.h"
 
 #include "_hx.h"
 #include "util.h"

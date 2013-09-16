@@ -17,7 +17,7 @@
 //
 //  IF YOU HAVE NO WAY OF WORKING WITH GPL, CONTACT ME.
 //-------------------------------------------------------------------------------
-#include <tap.h>
+#include "tap.h"
 #include <errno.h>
 #include <sys/stat.h>
 #include "_hx.h"
