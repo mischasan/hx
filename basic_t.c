@@ -248,6 +248,7 @@ main(void)
     system("PS4='# '; set -x; touch bad_t.hx; chmod 000 bad_t.hx");
     rc = hxcreate("bad_t.hx", 0755, 256, "ch", 2);
     ok(rc == HXERR_CREATE, "hxcreate reports failure for unwritable target file: %s", hxerror(rc));
+    unlink("bad_t.hx");
 
     rc = hxcreate("basic_t.hx", 0755, 0, "ch", 2);
     ok(rc == HXOKAY, "created basic_t.hx with default pgsize: %s", hxerror(rc));
