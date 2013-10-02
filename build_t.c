@@ -23,26 +23,30 @@
 #include "_hx.h"
 #include "util.h"
 
-static void try(char const*, int nrecs);
+static void try(char const *, int nrecs);
 
 int
 main(void)
 {
     char    input[999];
     char const *envhx = getenv("hx");
-    if (!envhx)         die(": $hx not set");
+
+    if (!envhx)
+        envhx = ".";
 
     setvbuf(stdout, 0, _IOLBF, 0);
-     
-    plan_tests(1 + 4*4);
-    
-    HXRET   rc = hxbuild(0, 0, 1<<20, 0.0);
+
+    plan_tests(1 + 4 * 4);
+
+    HXRET   rc = hxbuild(0, 0, 1 << 20, 0.0);
+
     ok(rc == HXERR_BAD_REQUEST, "hxbuild rejects NULL arg: %s", hxerror(rc));
 
     try("/dev/null", 0);
     try(strcat(strcpy(input, envhx), "/data.tab"), 88172);
     try(strcat(strcat(strcpy(input, "cat "), envhx), "/data.tab"), 88172);
-    try(strcat(strcat(strcpy(input, "head -2335 "), envhx), "/data.tab"), 2335);
+    try(strcat(strcat(strcpy(input, "head -2335 "), envhx), "/data.tab"),
+        2335);
 
     return exit_status();
 }
@@ -50,27 +54,34 @@ main(void)
 static void
 try(char const *inpfile, int nrecs)
 {
-    FILE        *fp = strchr(inpfile, ' ') ? popen(inpfile, "r") : fopen(inpfile, "r");
+    FILE   *fp =
+        strchr(inpfile, ' ') ? popen(inpfile, "r") : fopen(inpfile, "r");
     ok(fp, "input %s", inpfile);
-    if (!fp) die(": unable to open %s:", inpfile);
+    if (!fp)
+        die(": unable to open %s:", inpfile);
     setvbuf(fp, NULL, _IOFBF, 16384);
 
     hxcreate("build_t.hx", 0755, 4096, "", 0);
 
-    HXFILE      *hp = hxopen("build_t.hx", HX_UPDATE);
+    HXFILE *hp = hxopen("build_t.hx", HX_UPDATE);
 
-    double      alpha = tick();
-    HXRET       rc = hxbuild(hp, fp, 1<<20, 0.0); //128MB
-    double      omega = tick();
+    double  alpha = tick();
+    HXRET   rc = hxbuild(hp, fp, 1 << 20, 0.0); //128MB
+    double  omega = tick();
 
-    if (strchr(inpfile, ' ')) pclose(fp); else fclose(fp);
+    if (strchr(inpfile, ' '))
+        pclose(fp);
+    else
+        fclose(fp);
 
-    ok(rc == 0, "hxbuild from (%s) in %.3g secs, returns %s", inpfile, omega - alpha, hxerror(rc));
+    ok(rc == 0, "hxbuild from (%s) in %.3g secs, returns %s", inpfile,
+       omega - alpha, hxerror(rc));
 
-    rc = hxfix(hp,0,0,0,0);
-    ok(rc == (HXRET)HX_UPDATE, "hxcheck returns: %s", hxmode(rc));
+    rc = hxfix(hp, 0, 0, 0, 0);
+    ok(rc == (HXRET) HX_UPDATE, "hxcheck returns: %s", hxmode(rc));
 
-    HXSTAT      st;
+    HXSTAT  st;
+
     hxstat(hp, &st);
     ok(st.nrecs == nrecs, "hxbuild loaded %.0f/%d records", st.nrecs, nrecs);
     hxclose(hp);

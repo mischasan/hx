@@ -21,12 +21,14 @@
 -include rules.mk
 
 #---------------- GLOBAL VARS:
+# Used by some test programs:
 export hx       ?= .
 
 #---------------- PRIVATE VARS:
-hx.o            =  $(patsubst %,$(hx)/%, hx.o hxbuild.o hxcheck.o hxcreate.o hxdiag.o hxget.o hxlox.o hxname.o hxnext.o hxopen.o hxput.o hxref.o hxshape.o hxstat.o hxupd.o util.o)
-hx.rec          =  $(patsubst %,$(hx)/%, hx_ch.so hx_badb.so hx_badd.so hx_badh.so)
-hx.tpgms        := $(patsubst %,$(hx)/%, hxample perf_x basic_t check_t conc_t corrupt_t large_t lock_t many_t next_t split_t build_t)
+hx.o            =  $(patsubst %, $(hx)/%, hx.o hxbuild.o hxcheck.o hxcreate.o hxdiag.o hxget.o hxlox.o hxname.o hxnext.o hxopen.o hxput.o hxref.o hxshape.o hxstat.o hxupd.o util.o)
+hx.rec          =  $(patsubst %, $(hx)/%, hx_ch.so hx_badb.so hx_badd.so hx_badh.so)
+#hx.tpgm         := $(patsubst %, $(hx)/%, hxample perf_x basic_t check_t conc_t corrupt_t large_t lock_t many_t next_t split_t build_t)
+hx.tpgm         := $(patsubst %, $(hx)/%, hxample perf_x basic_t check_t conc_t corrupt_t large_t lock_t many_t next_t build_t)
 
 #---------------- PUBLIC VARS: inputs to install/clean/cover/test
 # Currently $(all) is only used by "clean:" to magically delete cov/prof output files.
@@ -37,30 +39,28 @@ hx.lib          = $(hx)/libhx.a $(hx)/hx_.so
 
 # Magic global variables ... note that unit-test tempfiles are always in cwd.
 all		+= hx
-clean 		+= $(hx.tpgms:%=%.hx) many_t.log.* many_t.*.core
+clean 		+= $(hx.tpgm:%=%.hx) bad_t.hx many_t.log.*
 
 hx.cover        = $(hx.o:.o=.c)
-hx.test         = $(patsubst %,%.pass,$(filter %_t,$(hx.tpgms)))
+hx.test         = $(patsubst %, %.pass, $(filter %_t,$(hx.tpgm)))
 
 #---------------- PUBLIC RULES:
 all     .PHONY  : hx.all
 test    .PHONY  : hx.test
 cover   .PHONY  : hx.cover
+#XXX .PHONY:hx.install breaks. Why?
 install         : hx.install
 profile .PHONY  : hx.profile
 
 #---------------- PRIVATE RULES:
-hx.all          : $(hx.bin) $(hx.lib) $(hx.tpgms)
+hx.all          : $(hx.bin) $(hx.lib)
 hx.test         : hx.all $(hx.test)
 $(hx.bin)       : $(hx)/libhx.a
 
-$(hx)/libhx.a   : CPPFLAGS  += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 $(hx)/libhx.a   : $(hx.o)
 
-$(hx.tpgms)     : CFLAGS += $(Wno-unused-result)
-$(hx.tpgms)     : CPPFLAGS += -I$(hx)
-$(hx.tpgms)     : LDLIBS += -pthread
-$(hx.tpgms)     : $(hx)/hx_.so $(hx)/libhx.a $(hx)/tap.o
+$(hx.tpgm)      : LDLIBS += -pthread
+$(hx.tpgm)      : $(hx)/hx_.so $(hx)/libhx.a $(hx)/tap.o
 
 $(hx.test)      : LD_LIBRARY_PATH := $(hx):$(LD_LIBRARY_PATH)
 $(hx.test)      : PATH := $(hx):$(PATH)
@@ -69,12 +69,12 @@ $(hx.test)      : $(hx)/hx_.so $(hx)/hx_ch.so
 # basic_t uses ALL hx record-type .so's
 $(hx)/basic_t.pass : $(hx.rec)
 $(hx)/build_t.pass : $(hx)/data.tab
-# Test programs call system("chx ...");
+
+# Some test programs call system("chx ...");
 $(hx)/basic_t.pass $(hx)/conc_t.pass $(hx)/many_t.pass  : $(hx)/chx
 
-$(hx)/hxshape.o : CFLAGS += -Wno-strict-aliasing
-$(hx)/%.i       : CPPFLAGS += -I$(hx) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-$(hx.tpgms:%=%.o %.s): CPPFLAGS := -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(filter-out -D_FORTIFY_SOURCE%, $(CPPFLAGS))
+$(hx.o:%.o=%.[ois])  : CPPFLAGS  += -I$(hx) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+$(hx.tpgm:%=%.[ois]) : CPPFLAGS := -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(filter-out -D_FORTIFY_SOURCE%, $(CPPFLAGS))
 
 -include $(hx)/*.d
 # vim: set nowrap :

@@ -46,6 +46,9 @@ Download the source, type "gmake".
 "gmake install" exports bin/chx, include/hx.h, lib/libhx.a to $DESTDIR/.
 (If you're interested in the GNUmakefile and rules.mk,
  check my blog posts on non-recursive make, at mischasan.wordpress.com.)
+
+If you want to run test programs outside "make", be sure to set LD_LIBRARY_PATH
+to include the directory containing hx_.so
  
 See the file "hxample.c" for examples of record-API usage.
 
