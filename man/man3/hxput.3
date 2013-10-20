@@ -1,0 +1,85 @@
+.\" Copyright (c) 2003 Andries Brouwer (aeb@cwi.nl)
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH HXPUT 3 2013-09-15  "" "HXFILE Programmer's Manual"
+.SH NAME
+hxput \- asynchronous write
+.SH SYNOPSIS
+.B "#include <hx.h>"
+.sp
+.BI "int hxput(HXFILE *" hp, char const *record, int length);
+.sp
+Link with \fI\-lhx\fP.
+.SH DESCRIPTION
+The
+.BR hxput ()
+function inserts or updates a record in a HXFILE, opened with
+.BR hxopen (3).
+.SH RETURN VALUE
+On success, the length of the previous record with the same key is returned.
+If there is no such record, 0 is returned.
+On error, a negative error code is returned; see 
+.BR hxerror (3)
+for a full list.
+.SH ERRORS
+.TP
+.B HXERR_BAD_REQUEST
+The 
+.BR record
+data block and 
+.BR length are invalid for the given HXFILE's record type;
+or the 
+.BR length
+is too great for the HXFILE's page size; see 
+.BR hxmaxrec (3).
+.SH NOTES
+It is a special case for
+.BR hxput
+called immediately after
+.BR hxhold (3)
+or
+.BR hxnext (3).
+After
+.BR hxhold,
+.BR hxput
+with the same record key as retrieved by
+.BR hxhold
+completes an atomic update for that key. Any other record key causes
+the lock by
+.BR hxhold
+to first be release.
+After
+.BR hxnext,
+.BR hxput
+with any key other than that returned by
+.BR hxnext
+is an error
+.BR (HXERR_BAD_REQUEST)
+and any replacement record that is larger than the old record may 
+cause the same error return.
+.SH SEE ALSO
+.BR hxdel (3),
+.BR hxhold (3),
+.BR hxmaxrec (3),
+.BR hxnext (3),
+.BR hxopen (3)

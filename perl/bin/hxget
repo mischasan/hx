@@ -1,0 +1,17 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use Hash::Dynamic;
+use YAML::Syck qw(Dump);
+
+if (@ARGV < 2) {
+    die "USAGE: $0 <filename> <key> [<key2>...]\n";
+}
+
+my $file = shift;
+my $hx = Hash::Dynamic->new(filename => $file);
+my $hash = {};
+for my $key (@ARGV) {
+    $hash->{$key} = $hx->get($key);
+}
+print Dump($hash);

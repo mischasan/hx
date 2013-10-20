@@ -1,0 +1,14 @@
+*.[adios]
+*.gcda
+*.gcno
+*.gcov
+*.out
+*.so
+*.hx
+*.bak
+frog
+toad
+newt
+bufo
+rana
+sapo

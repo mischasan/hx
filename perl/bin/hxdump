@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Hash::Dynamic;
+
+if (@ARGV == 0) {
+    die "USAGE: $0 <filename> ...\n";
+}
+
+print "--- \n";
+for my $file (@ARGV) {
+    my $hx = Hash::Dynamic->new(filename => $file);
+    print "$file:\n";
+    while (my ($key, $val) = $hx->nextpair) {
+	print "    $key: $val\n";
+    }
+}
