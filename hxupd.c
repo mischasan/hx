@@ -192,6 +192,7 @@ _hxfresh(HXLOCAL const *locp, HXBUF * bufp, PAGENO pgno)
 //  empty pages. It is BARELY possible that a split will require
 //  a new empty page in order to complete. In this case, _hxgrow
 //  recurses.
+static inline int POWER_OF_TWO(int n) { return n && !(n & (n - 1)); }
 void
 _hxgrow(HXLOCAL * locp, HXBUF * retp, COUNT need, PAGENO * head)
 {
@@ -224,7 +225,7 @@ _hxgrow(HXLOCAL * locp, HXBUF * retp, COUNT need, PAGENO * head)
         }
 
         _hxpoint(locp);         // because npages has changed
-        PAGENO oldpg = SPLIT_PAGE(locp);
+        PAGENO oldpg = SPLIT_LO(newpg);
         if (*head == oldpg) {
             DEBUG3("head=%u", *head);
             *head = need = 0;   // "need=0" blocks _hxshare
@@ -258,8 +259,8 @@ _hxgrow(HXLOCAL * locp, HXBUF * retp, COUNT need, PAGENO * head)
             _hxload(locp, bufp, oldp->next);
             // _hxshift moves records from bufp to (oldp,newp).
             // Its return value indicates whether there are still
-            // records in bufp for (both/either/neither) 
-            // of oldp and newp. 
+            // records in bufp for (both/either/neither)
+            // of oldp and newp.
             switch (_hxshift(locp, oldpg, newpg, bufp, oldp, newp)) {
             case 0:
                 LINK(oldp, bufp->next);
@@ -456,7 +457,7 @@ _hxsave(HXLOCAL * locp, HXBUF * bufp)
              bufp->pgno, bufp->next, bufp->used, bufp->recs, bufp->hsize,
              bufp->orig, hp->tail.pgno, _hxheads(locp, bufp, headstr));
     }
-    assert(!bufp->pgno || !bufp->next || bufp->used);
+    assert(!bufp->pgno || !bufp->next || bufp->used || IS_HEAD(bufp->pgno));
     assert(!bufp->pgno || bufp->next != bufp->pgno);
     assert(FITS(hp, bufp, 0, 0));   // Check that (used,recs) are not out of bounds.
     assert(!IS_MAP(hp, bufp->pgno) || bufp->data[bufp->used] & 1);

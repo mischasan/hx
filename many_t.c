@@ -17,7 +17,6 @@
 //
 //  IF YOU HAVE NO WAY OF WORKING WITH GPL, CONTACT ME.
 //-------------------------------------------------------------------------------
-#include <glob.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,18 +40,13 @@ main(int argc, char **argv)
     if (nprocs < 2) die(": procs must be > 1");
     nrecs /= nprocs;
 
-    glob_t files;
-    if (!glob("many_t.log.*", 0, NULL, &files)) {
-        for (i = files.gl_pathc; i > 0; unlink(files.gl_pathv[--i]));
-        globfree(&files);
-    }
+    system("rm -rf many_t.log.*");
+    setenv("hx", ".", 0);
 
     plan_tests(4);
 
     int     rc = hxcreate("many_t.hx", 0755, 4096, 0, 0);
-
     ok(rc == 0, "created many_t.hx: %s", hxerror(rc));
-    //setpgrp(); int pgrp = getpgrp(); signal(SIGTERM, SIG_IGN);
 
     char    buf[200];
     double  t0 = hxtime = tick();
@@ -60,19 +54,16 @@ main(int argc, char **argv)
     for (i = 0; i < nprocs; ++i) {
         if ((pid = fork()))
             continue;
+
         // A HXFILE without HX_MMAP cannot be shared across fork().
         HXFILE *hp = hxopen("many_t.hx", HX_UPDATE + HX_MMAP);
 
         char    logname[20];
-
         sprintf(logname, "many_t.log.%05d", getpid());
         if (hxdebug)
             setvbuf(stderr = hxlog = fopen(logname, "w"), NULL, _IOLBF, 0);
         logname[10] = '\t';
         hxproc = logname + 10;
-
-        if (hxdebug)
-            _hxdebug("main", __LINE__, "pid=%d", getpid());
 
         memset(buf, '-', sizeof buf);
         memcpy(buf, logname + 11, 5);   // pid
@@ -86,10 +77,10 @@ main(int argc, char **argv)
             if (hxdebug > 1)
                 fprintf(hxlog, "@PUT %s %d\t%05d\t%.6f\n", buf, len, pid, tick() - hxtime);
 
-            buf[len - 1] = ']';
-            buf[len] = 0;
-            rc = hxput(hp, buf, len + 1);   // must include trailing nul.
-            buf[len - 1] = buf[len] = '-';
+            buf[len - 1] = ']', buf[len] = 0;
+                // buf: "PID-RECNUM\0[--- ... ---]\0"
+            rc = hxput(hp, buf, len + 1);
+            buf[len - 1] = '-', buf[len] = '-';
             if (rc) {
                 fprintf(stderr, "%s at %s\n", hxerror(rc), buf);
                 break;
@@ -114,8 +105,7 @@ main(int argc, char **argv)
     hxclose(hp);
     ok(rc == HX_UPDATE, "hxcheck returns: %s", hxmode(rc));
     if (rc != HX_UPDATE)
-        system
-            ("(set -x; unset HXDEBUG; ./chx -dd check many_t.hx; ./chx info many_t.hx; ./chx stat many_t.hx) >&2");
+        system("(HXDEBUG=; set -x; $hx/chx check -dd many_t.hx; $hx/chx info many_t.hx; $hx/chx stat many_t.hx) >&2");
 
     return exit_status();
 }

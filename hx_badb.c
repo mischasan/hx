@@ -20,6 +20,23 @@
 // hx_badb: hx 'rectype' implementation without diff or hash !
 #include "hx_.h"
 
-int load(char *recp __unused, int recsize __unused, char const *buf __unused, char const*udata __unused, int uleng __unused) { return 0; }
-int save(char const*recp __unused, int reclen __unused, char *buf __unused, int bufsize __unused, char const*udata __unused, int uleng __unused) { return 0; }
-int test(char const*recp __unused, int reclen __unused, char const*udata __unused, int uleng __unused) { return 0; }
+int
+load(char *recp __unused, int recsize __unused, char const *buf __unused,
+     char const *udata __unused, int uleng __unused)
+{
+    return 0;
+}
+
+int
+save(char const *recp __unused, int reclen __unused, char *buf __unused,
+     int bufsize __unused, char const *udata __unused, int uleng __unused)
+{
+    return 0;
+}
+
+int
+test(char const *recp __unused, int reclen __unused,
+     char const *udata __unused, int uleng __unused)
+{
+    return 0;
+}

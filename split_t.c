@@ -22,43 +22,42 @@
 #include "_hx.h"
 
 PAGENO  testv[][9] = {
-  //NPAGES ---OUT---
-    {  5,  2,  1         },
-    {  6,  2,  1         },
-    {  7,  2             },
-    {  8,  0             },
-    {  9,  5,  3,  1     },
-    { 10,  5,  1         },
-    { 11,  1             },
-    { 12,  0             },
-    { 13,  5,  3,  2     },
-    { 14,  5,  3         },
-    { 15,  5             },
-    { 16,  0             },
-    { 17,  9,  7,  6     },
-    { 18,  9,  7         },
-    { 19,  9             },
-    { 20,  0             },
-    { 21, 10,  2,  1     },
-    { 22,  2,  1         },
-    { 23,  2             },
-    { 27,  6             },
-    // steps over map1:
-    { 29, 14, 13, 11, 10,  9,  7 },
-    { 30, 14, 13, 11, 10,  9 },
-    { 31, 14, 13, 11, 10 },
-
-    { 33, 14, 13, 11     },
-    { 34, 14, 13         },
-    { 35, 14             },
-    { 41, 21, 19,  1     },
-    { 83, 41             },
-    { 84,  0             },
-    { 85, 42,  2,  1     },
-    { 86,  2,  1         }
+    //NPAGES ---OUT---
+    {5, 2, 1},
+    {6, 2, 1},
+    {7, 2},
+    {8, 0},
+    {9, 5, 3, 1},
+    {10, 5, 1},
+    {11, 1},
+    {12, 0},
+    {13, 5, 3, 2},
+    {14, 5, 3},
+    {15, 5},
+    {16, 0},
+    {17, 9, 7, 6},
+    {18, 9, 7},
+    {19, 9},
+    {20, 0},
+    {21, 10, 2, 1},
+    {22, 2, 1},
+    {23, 2},
+    {27, 6},
+    // steps over map1:,
+    {29, 14, 13, 11, 10, 9, 7},
+    {30, 14, 13, 11, 10, 9},
+    {31, 14, 13, 11, 10},
+    {33, 14, 13, 11},
+    {34, 14, 13},
+    {35, 14},
+    {41, 21, 19, 1},
+    {83, 41},
+    {84, 0},
+    {85, 42, 2, 1},
+    {86, 2, 1}
 };
 
-int ntests = sizeof(testv)/sizeof(*testv);
+int     ntests = sizeof testv / sizeof *testv;
 
 int
 main(int argc, char **argv)
@@ -70,17 +69,20 @@ main(int argc, char **argv)
     setvbuf(stderr, 0, _IOLBF, 0);
 
     //XXX: make leng=23, so that we test skipping (map1).
-    int rc = hxcreate("split_t.hx", 0644, 32, "ch\000", 23);
+    int     rc = hxcreate("split_t.hx", 0644, 32, "ch\000", 23);
+
     ok(!rc, "created split_t.hx: %s", hxerror(rc));
     HXFILE *hp;
+
     ok(hp = hxopen("split_t.hx", 0), "opened split_t.hx");
     PAGENO  pgv[9];
     int     i, j;
+
     for (i = 0; i < ntests; ++i) {
-        memset(pgv, 0, sizeof(pgv));
+        memset(pgv, 0, sizeof pgv);
         _hxsplits(hp, pgv, testv[i][0]);
         //for (j = 1; testv[i][j] && testv[i][j] == pgv[j-1]; ++j);
-        for (j = 1; testv[i][j] == pgv[j-1] && pgv[j-1]; ++j);
+        for (j = 1; testv[i][j] == pgv[j - 1] && pgv[j - 1]; ++j);
         if (!ok(!testv[i][j], "split %u", testv[i][0])) {
             for (j = 0; pgv[j]; ++j)
                 fprintf(stderr, " %u", pgv[j]);
@@ -89,18 +91,20 @@ main(int argc, char **argv)
     }
 
     double  sum = 0;
+
     for (i = 4; i < 1000; ++i) {
-        memset(pgv, 0, sizeof(pgv));
+        memset(pgv, 0, sizeof pgv);
         _hxsplits(hp, pgv, i);
         sum += (double)pgv[0] / i;
     }
     diag("waste: %.2f", sum / 1000);
 
     while (*++argv) {
-        memset(pgv, 0, sizeof(pgv));
+        memset(pgv, 0, sizeof pgv);
         _hxsplits(hp, pgv, atoi(*argv));
         printf("%7s:", *argv);
-        for (j = 0; pgv[j]; ++j) printf(" %u", pgv[j]);
+        for (j = 0; pgv[j]; ++j)
+            printf(" %u", pgv[j]);
         putchar('\n');
     }
     hxclose(hp);

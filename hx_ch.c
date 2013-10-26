@@ -20,55 +20,59 @@
 #include <string.h>
 #include "hx_.h"
 
-static inline int IMIN(int a, int b) { return a < b ? a : b; }
+static inline int
+IMIN(int a, int b)
+{
+    return a < b ? a : b;
+}
 
 int
 diff(char const *a, char const *b,
-	char const*udata __unused, int uleng __unused)
+     char const *udata __unused, int uleng __unused)
 {
-    return *(short const*)a - *(short const*)b;
+    return *(short const *)a - *(short const *)b;
 }
 
 HXHASH
-hash(char const*recp,
-	char const*udata __unused, int uleng __unused)
+hash(char const *recp, char const *udata __unused, int uleng __unused)
 {
-    return  *recp;
+    return *recp;
 }
 
 int
 load(char *recp, int recsize, char const *buf,
-	char const*udata __unused, int uleng __unused)
+     char const *udata __unused, int uleng __unused)
 {
-    int	    buflen = strlen(buf);
+    int     buflen = strlen(buf);
+
     memcpy(recp, buf, IMIN(buflen, recsize));
-    return  buflen;
+    return buflen;
 }
 
 int
-save(char const*recp, int reclen, char *buf, int bufsize,
-	char const*udata __unused, int uleng __unused)
+save(char const *recp, int reclen, char *buf, int bufsize,
+     char const *udata __unused, int uleng __unused)
 {
     if (bufsize > 0) {
         int     len = IMIN(reclen, bufsize - 1);
+
         memcpy(buf, recp, len);
         buf[len] = 0;
     }
 
-    return  reclen + 1;
+    return reclen + 1;
 }
 
-
 int
-test(char const*recp, int reclen,
-	char const*udata __unused, int uleng __unused)
+test(char const *recp, int reclen,
+     char const *udata __unused, int uleng __unused)
 {
     if (reclen < 2)
-	return	0;
+        return 0;
 
-    for (;--reclen >= 0; ++recp)
-	if (*recp < ' ' || *recp > '~')
-	    return 0;
+    for (; --reclen >= 0; ++recp)
+        if (*recp < ' ' || *recp > '~')
+            return 0;
 
-    return  1;
+    return 1;
 }

@@ -18,8 +18,8 @@
 //  IF YOU HAVE NO WAY OF WORKING WITH GPL, CONTACT ME.
 //-------------------------------------------------------------------------------
 // hxshape: adjust the density of a file, to match a desired
-//	average number of (overflow) page loads per unsuccessful
-//	query.
+//  average number of (overflow) page loads per unsuccessful
+//  query.
 // There are two basic tests for efficiency of a hash table:
 // avg number of disk reads per successful or unsuccessful read.
 // The former is always less than the latter. The former also
@@ -58,32 +58,34 @@
 #include "_hx.h"
 
 static int
-cmpused(PGINFO const * a, PGINFO const * b)
-{ return (int)a->used - (int)b->used; }
+cmpused(PGINFO const *a, PGINFO const *b)
+{
+    return (int)a->used - (int)b->used;
+}
 
 //--------------|---------------------------------------------
 HXRET
-hxshape(HXFILE *hp, double overload)
+hxshape(HXFILE * hp, double overload)
 {
-    HXLOCAL     loc, *locp = &loc;
-    HXBUF       *srcp, *dstp, *oldp;
-    int         pos, bitpos;
-    PGINFO      *atail, *ztail;
-    PAGENO      pg, pm, *aprev, *afree, *zfree;
-    double	totbytes = 0, fullbytes = 0, fullpages = 0;
+    HXLOCAL loc, *locp = &loc;
+    HXBUF  *srcp, *dstp, *oldp;
+    int     pos, bitpos;
+    PGINFO *atail, *ztail;
+    PAGENO  pg, pm, *aprev, *afree, *zfree;
+    double  totbytes = 0, fullbytes = 0, fullpages = 0;
 
     if (!hp || hp->buffer.pgno || hp->mode & HX_MMAP
-            || !(hp->mode & HX_UPDATE))
-	return	HXERR_BAD_REQUEST;
+        || !(hp->mode & HX_UPDATE))
+        return HXERR_BAD_REQUEST;
 
     ENTER(locp, hp, NULL, 3);
 
     _hxlock(locp, 0, 0);
     _hxsize(locp);
 
-    srcp    = &locp->buf[0];
-    dstp    = &locp->buf[1];
-    oldp    = &locp->buf[2];
+    srcp = &locp->buf[0];
+    dstp = &locp->buf[1];
+    oldp = &locp->buf[2];
 
     _hxinitRefs(locp);
 
@@ -92,11 +94,12 @@ hxshape(HXFILE *hp, double overload)
     locp->vtail = ztail;
 
     for (pg = 1; pg < locp->npages; ++pg) {
-        PGINFO      x = _hxpginfo(locp, pg);
+        PGINFO  x = _hxpginfo(locp, pg);
+
         _hxsetRef(locp, pg, x.pgno);
-	totbytes += x.used;
-	if (x.pgno)     // i.e. page.next != 0
-	    ++fullpages, fullbytes += x.used;
+        totbytes += x.used;
+        if (x.pgno)             // i.e. page.next != 0
+            ++fullpages, fullbytes += x.used;
         else if (x.used && !IS_HEAD(pg))
             x.pgno = pg, *ztail++ = x;
     }
@@ -104,7 +107,7 @@ hxshape(HXFILE *hp, double overload)
     // Sort vtail by (used), so that smallest+largest (used)
     // counts can be matched up; simple greedy-fill algorithm.
     qsort(locp->vtail, ztail - locp->vtail,
-          sizeof(*locp->vtail), (cmpfn_t) cmpused);
+          sizeof *locp->vtail, (cmpfn_t) cmpused);
 
     // Combine tail pages where possible:
     for (atail = locp->vtail, --ztail; atail < ztail;) {
@@ -112,7 +115,6 @@ hxshape(HXFILE *hp, double overload)
             --ztail;
             continue;
         }
-
         // Merge is always from [atail] to [ztail], to maintain
         // ([ztail].used >= [ztail-1].used).
         if (atail->pgno < ztail->pgno) {
@@ -142,44 +144,45 @@ hxshape(HXFILE *hp, double overload)
 
     // Now decide whether to grow or shrink the file.
 
-    PAGENO	overflows = 0;
+    PAGENO  overflows = 0;
+
     for (pg = 1; pg < locp->npages; ++pg) {
-	if (IS_HEAD(pg)) {
-            int loops = HX_MAX_CHAIN;
+        if (IS_HEAD(pg)) {
+            int     loops = HX_MAX_CHAIN;
+
             for (pm = pg; (pm = locp->vnext[pm]); ++overflows)
                 if (!--loops)
                     LEAVE(locp, HXERR_BAD_FILE);
         }
     }
 
-    PAGENO dpages = locp->dpages + overflows;
-    PAGENO	goodsize = dpages / (1.0 + overload);
+    PAGENO  dpages = locp->dpages + overflows;
+    PAGENO  goodsize = dpages / (1.0 + overload);
+
     DEBUG("%.0f/%.0f=%0.f  %.0f %lu/%.2f=%lu => %lu",
-	    fullbytes, fullpages, fullbytes/fullpages,
-	    totbytes, dpages, overload + 1,
-	    goodsize, _hxd2f(goodsize));
+          fullbytes, fullpages, fullbytes / fullpages,
+          totbytes, dpages, overload + 1, goodsize, _hxd2f(goodsize));
     // "+1" for the root page
     goodsize = goodsize ? _hxd2f(goodsize) + 1 : 2;
     if (locp->npages <= goodsize) {
-	// Increase dpages.
-	// Note that _hxgrow always returns an ALLOCATED
-	//  overflow. It would be smarter to clear all the
-	//  map bits in one step at the end, the way
-	//  hxbuild sets all the map bits in one load/save.
-	PAGENO	junk = 0;
-	
-	while (locp->npages < goodsize) {
-	    _hxgrow(locp, dstp, DATASIZE(hp), &junk);
-	    _hxsave(locp, dstp);
-	    _hxalloc(locp, dstp->pgno, 0);
-	}
+        // Increase dpages.
+        // Note that _hxgrow always returns an ALLOCATED
+        //  overflow. It would be smarter to clear all the
+        //  map bits in one step at the end, the way
+        //  hxbuild sets all the map bits in one load/save.
+        PAGENO  junk = 0;
 
-	_hxflushfreed(locp, dstp);
-	LEAVE(locp, HXNOTE);
+        while (locp->npages < goodsize) {
+            _hxgrow(locp, dstp, DATASIZE(hp), &junk);
+            _hxsave(locp, dstp);
+            _hxalloc(locp, dstp->pgno, 0);
+        }
+
+        _hxflushfreed(locp, dstp);
+        LEAVE(locp, HXNOTE);
     }
-
     // Build a list of free pgnos
-    assert(sizeof(*afree) <= sizeof(*locp->vtail));
+    assert(sizeof *afree <= sizeof *locp->vtail);
     afree = zfree = (PAGENO *) locp->vtail;
 
     for (pg = pm = 0; pg < locp->npages; pg += HXPGRATE) {
@@ -193,23 +196,22 @@ hxshape(HXFILE *hp, double overload)
     // Work backward from end of file, trimming pages.
     for (; locp->npages > goodsize; --locp->npages) {
 
-        PAGENO      srchead = locp->npages - 1;
-        PAGENO      srctail, dsthead, dstneck, dsttail;
-        int	    loops = HX_MAX_CHAIN;
+        PAGENO  srchead = locp->npages - 1;
+        PAGENO  srctail, dsthead, dstneck, dsttail;
+        int     loops = HX_MAX_CHAIN;
 
         // EASIEST CASE: a map or unreferenced oveflow page
         if (srchead == zfree[-1] || IS_MAP(hp, srchead)) {
-	    assert(!VREF(locp,srchead) && !IS_HEAD(srchead));
+            assert(!VREF(locp, srchead) && !IS_HEAD(srchead));
             --zfree;
             continue;
         }
-
         // EASIER CASE: an empty head page
         _hxload(locp, srcp, srchead);
         if (!srcp->used)
             continue;
 
-	// Anything from here on might need 2 free pages
+        // Anything from here on might need 2 free pages
         if (zfree - afree < 2)
             break;
 
@@ -220,8 +222,8 @@ hxshape(HXFILE *hp, double overload)
 #   if 0
         // hxshape does not work with MMAP as yet.
         if (hp->mmap)
-            memcpy(&hp->mmap[(off_t)srcp->pgno * hp->pgsize],
-        	    srcp->page, hp->pgsize);
+            memcpy(&hp->mmap[(off_t) srcp->pgno * hp->pgsize],
+                   srcp->page, hp->pgsize);
 #   endif
         _hxalloc(locp, srcp->pgno, 1);
         _hxsetRef(locp, srcp->pgno, srcp->next);
@@ -237,10 +239,9 @@ hxshape(HXFILE *hp, double overload)
 
             continue;
         }
-
         // HARD CASE: a head page to desplit:
         locp->hash = RECHASH(srcp->data);
-        _hxpoint(locp);    // recalc (dpages,head)
+        _hxpoint(locp);         // recalc (dpages,head)
 
         dsthead = locp->head;
         dstneck = locp->vnext[dsthead];
@@ -248,8 +249,8 @@ hxshape(HXFILE *hp, double overload)
         srctail = _hxgetRef(locp, srchead, 0);
 
         // Append srchead to dsttail, or insert chain between
-	// dsthead and vnext[dsthead]. If srctail is shared,
-	// make a copy of * it first.
+        // dsthead and vnext[dsthead]. If srctail is shared,
+        // make a copy of * it first.
         if (dsttail == dsthead || VREF(locp, dsttail) == 1) {
 
             dsthead = dsttail;
@@ -281,20 +282,19 @@ hxshape(HXFILE *hp, double overload)
         } else {
 
             _hxload(locp, oldp, srctail);
-	    if (!oldp->used)
-		LEAVE(locp, HXERR_BAD_FILE);
+            if (!oldp->used)
+                LEAVE(locp, HXERR_BAD_FILE);
 
-	    _hxfresh(locp, dstp, *afree++);
+            _hxfresh(locp, dstp, *afree++);
             _hxalloc(locp, dstp->pgno, 1);
-            _hxshift(locp, locp->head, srchead,
-			oldp, dstp, dstp);
+            _hxshift(locp, locp->head, srchead, oldp, dstp, dstp);
             _hxsave(locp, oldp);
-	    // This hack prevents the CHECK in _hxlink from
-	    // aborting when oldp contains a page that the
-	    // next iteration wants to PUTLINK. This ONLY occurs
-	    // in this code (I think).
-	    // TODO: can this happen in (hxfix,hxshape)??
-	    oldp->pgno = -1;
+            // This hack prevents the CHECK in _hxlink from
+            // aborting when oldp contains a page that the
+            // next iteration wants to PUTLINK. This ONLY occurs
+            // in this code (I think).
+            // TODO: can this happen in (hxfix,hxshape)??
+            oldp->pgno = -1;
 
             BUFLINK(locp, dstp, dstneck);
             _hxsave(locp, dstp);
@@ -320,8 +320,7 @@ hxshape(HXFILE *hp, double overload)
             if (!--loops)
                 LEAVE(locp, HXERR_BAD_FILE);
 
-            if (_hxshift(locp, locp->head, srchead,
-			    srcp, dstp, dstp)) {
+            if (_hxshift(locp, locp->head, srchead, srcp, dstp, dstp)) {
 
                 SWAP(srcp, dstp);
 
@@ -330,7 +329,7 @@ hxshape(HXFILE *hp, double overload)
                 BUFLINK(locp, dstp, srcp->next);
 
                 if (!srcp->used != !VREF(locp, srcp->pgno))
-		    LEAVE(locp, HXERR_BAD_FILE);
+                    LEAVE(locp, HXERR_BAD_FILE);
 
                 if (!srcp->used) {
                     BUFLINK(locp, srcp, 0);
@@ -349,12 +348,12 @@ hxshape(HXFILE *hp, double overload)
         _hxsave(locp, dstp);
     }
 
-	// npages was overdecremented by one in loop
+    // npages was overdecremented by one in loop
     _hxresize(locp, locp->npages + 1);
 
     // Zero the freemap for all truncated overflow pages:
     pg = _hxmap(hp, locp->npages + HXPGRATE
-			- locp->npages % HXPGRATE, &bitpos);
+                - locp->npages % HXPGRATE, &bitpos);
 
     _hxload(locp, dstp, pg);
     DEBUG2("clear map %lu from bit %d onward", pg, bitpos);
@@ -366,4 +365,5 @@ hxshape(HXFILE *hp, double overload)
 
     LEAVE(locp, HXOKAY);
 }
+
 //EOF

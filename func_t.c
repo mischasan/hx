@@ -29,7 +29,7 @@ main(void)
     setvbuf(stdout, 0, _IOLBF, 0);
 
     struct { PAGENO inp, exp; } try_split[] = {
-        {2,0}, {3,1}, {4,0}, {5,1}, {6,2}, {7,3}
+        {2,1}, {3,1}, {4,2}, {5,1}, {6,2}, {7,3}
     };
     int i, ntry_split = sizeof try_split/sizeof*try_split;
 

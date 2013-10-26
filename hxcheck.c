@@ -20,7 +20,7 @@
 // hxcheck: Check/repair a hx file.
 
 #include <assert.h>
-#include <stdint.h>	// uintptr_t
+#include <stdint.h>             // uintptr_t
 
 #include "_hx.h"
 
@@ -29,48 +29,55 @@
 #undef  _E
 #define _E(x)   #x
 char const *hxcheck_namev[] = { ERROR_LIST };
-int	    hxcheck_errv[NERRORS];
+
+int     hxcheck_errv[NERRORS];
+
 //--------------|---------------------------------------------
-typedef void (LINK_FN)(HXLOCAL*,PAGENO,PAGENO);
-typedef void (SAVE_FN)(HXLOCAL*,HXBUF*);
+typedef void (LINK_FN) (HXLOCAL *, PAGENO, PAGENO);
+typedef void (SAVE_FN) (HXLOCAL *, HXBUF *);
 
     // nolink,nosave: stubs for HX_CHECK (readonly) mode:
-static void nolink(HXLOCAL *locp, PAGENO x, PAGENO y)
-    {(void)locp,(void)x,(void)y;}
-static void nosave(HXLOCAL *locp, HXBUF *bufp)
-    { (void)locp; SCRUB(bufp); }
+static void
+nolink(HXLOCAL * locp, PAGENO x, PAGENO y)
+{
+    (void)locp, (void)x, (void)y;
+}
 
-static void	clear_page(HXLOCAL *locp, HXBUF *bufp);
-static int	xor_map(HXLOCAL*, HXBUF *mapp, PAGENO pg, int);
-static PAGENO   pghash(PAGENO);
+static void
+nosave(HXLOCAL * locp, HXBUF * bufp)
+{
+    (void)locp;
+    SCRUB(bufp);
+}
 
-static void check_data_page(HXLOCAL *locp,
-				HXBUF	*mapp,	PAGENO pg,
-				int	errv[], HXBUF *bufp,
-				FILE    *tmpfp);
+static void clear_page(HXLOCAL * locp, HXBUF * bufp);
+static int xor_map(HXLOCAL *, HXBUF * mapp, PAGENO pg, int);
+static PAGENO pghash(PAGENO);
 
-static void check_map_page(HXLOCAL *locp,
-				HXBUF	*mapp,	PAGENO pg,
-				int	errv[], PAGENO lastmap,
-				int	lastbit);
+static void check_data_page(HXLOCAL * locp,
+                            HXBUF * mapp, PAGENO pg,
+                            int errv[], HXBUF * bufp, FILE * tmpfp);
 
-static void recover(HXLOCAL*, HXBUF const*, FILE*);
+static void check_map_page(HXLOCAL * locp,
+                           HXBUF * mapp, PAGENO pg,
+                           int errv[], PAGENO lastmap, int lastbit);
+
+static void recover(HXLOCAL *, HXBUF const *, FILE *);
 
 #define	REPAIRING(locp)	((locp)->mode == F_WRLCK)
 //--------------|---------------------------------------------
 int
-hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
-	char const *udata, int uleng)
+hxfix(HXFILE * hp, FILE * tmpfp, int pgsize, char const *udata, int uleng)
 {
-    HXLOCAL	loc, *locp = &loc;
-    int		ret;
-    HXBUF       *bufp, *mapp, *srcp, *dstp;
-    PAGENO      *pp, pg, pn, hash, ph, lastmap;
-    int		lastbit, leng;
+    HXLOCAL loc, *locp = &loc;
+    int     ret;
+    HXBUF  *bufp, *mapp, *srcp, *dstp;
+    PAGENO *pp, pg, pn, hash, ph, lastmap;
+    int     lastbit, leng;
     volatile int badroot = 0;
-    char        *recp, *endp;
-    LINK_FN     *_cklink;
-    SAVE_FN     *_cksave;
+    char   *recp, *endp;
+    LINK_FN *_cklink;
+    SAVE_FN *_cksave;
 
     // Note that a corrupt "version" field is a problem.
     // A pre-hxi file will have version (i.e. pgrate) == 4.
@@ -78,43 +85,40 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
     // This means there is no way to repair a hxi file that
     // happens to have "0x0004" written onto its version.
     if (!hp || (tmpfp && hp->mode & HX_MMAP)
-            || (tmpfp && hp->buffer.pgno)
-	    || hp->version == 4 || (uleng && !udata))
-	return HXERR_BAD_REQUEST;
+        || (tmpfp && hp->buffer.pgno)
+        || hp->version == 4 || (uleng && !udata))
+        return HXERR_BAD_REQUEST;
 #    define BAD(x,p) (DEBUG2("pgno=%u %s",p,hxcheck_namev[x]),\
 			    ++hxcheck_errv[x])
-#    define VISITED   1   // bit in visit[] to mark loops
+#    define VISITED   1         // bit in visit[] to mark loops
 
-    memset(hxcheck_errv, 0, sizeof(hxcheck_errv));
+    memset(hxcheck_errv, 0, sizeof hxcheck_errv);
 
     // Ensure that the file is readable AT ALL.
     if (hp->pgsize < HX_MIN_PGSIZE
-	    || hp->pgsize >  HX_MAX_PGSIZE
-            || hp->pgsize & (hp->pgsize - 1)) {
+        || hp->pgsize > HX_MAX_PGSIZE || hp->pgsize & (hp->pgsize - 1)) {
         badroot = hp->pgsize = pgsize;
     }
 
     if (!hp->pgsize)
-	return HX_REPAIR;
+        return HX_REPAIR;
 
-    if (udata &&
-	(hp->uleng-uleng || memcmp(hp->udata, udata, uleng))) {
+    if (udata && (hp->uleng - uleng || memcmp(hp->udata, udata, uleng))) {
 
-	hp->udata = realloc(hp->udata, uleng + 1);
-	hp->uleng = uleng;
-	memcpy(hp->udata, udata, uleng);
-	hp->udata[uleng] = 0;
-	hxlib(hp, hp->udata, 0);
-	badroot = 1;
+        hp->udata = realloc(hp->udata, uleng + 1);
+        hp->uleng = uleng;
+        memcpy(hp->udata, udata, uleng);
+        hp->udata[uleng] = 0;
+        hxlib(hp, hp->udata, 0);
+        badroot = 1;
     }
-
     // Now that (pgsize,data,uleng) can be trusted...
     ENTER(locp, hp, 0, 2);
 
     if (!tmpfp)
-	locp->mode = F_RDLCK;
+        locp->mode = F_RDLCK;
     else if (ftruncate(fileno(tmpfp), 0L))
-	LEAVE(locp, HXERR_FTRUNCATE);
+        LEAVE(locp, HXERR_FTRUNCATE);
 
     _hxlock(locp, 0, 0);
     _hxsize(locp);
@@ -124,25 +128,25 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
     mapp = dstp = &locp->buf[1];
     _cklink = REPAIRING(locp) ? _hxlink : nolink;
     _cksave = REPAIRING(locp) ? _hxsave : nosave;
-#    define    _hxlink    _cklink // HACK on PUTLINK
+#    define    _hxlink    _cklink   // HACK on PUTLINK
 
-    if (badroot) {                 // FIX UP root page
-	HXROOT	    *rp = (HXROOT*)mapp->page;
+    if (badroot) {              // FIX UP root page
+        HXROOT *rp = (HXROOT *) mapp->page;
 
         _hxload(locp, mapp, 0);
         STSH(hp->pgsize, &rp->pgsize);
         STSH(hp->version, &rp->version);
-	mapp->next = LDUL(&mapp->page->next);
-	mapp->used = hp->uleng;
-	memcpy((char*)(rp + 1), hp->udata, hp->uleng);
-	mapp->data[uleng] |= 0x01;
+        mapp->next = LDUL(&mapp->page->next);
+        mapp->used = hp->uleng;
+        memcpy((char *)(rp + 1), hp->udata, hp->uleng);
+        mapp->data[uleng] |= 0x01;
         STAIN(mapp);
         _cksave(locp, mapp);
-	BAD(bad_root, 0);
+        BAD(bad_root, 0);
     }
 
     _hxinitRefs(locp);
-    locp->visit = calloc(locp->npages/HXPGRATE+1, sizeof(PAGENO));
+    locp->visit = calloc(locp->npages / HXPGRATE + 1, sizeof(PAGENO));
 
     lastmap = locp->npages - 1;
     lastmap = _hxmap(hp, lastmap - lastmap % HXPGRATE, &lastbit);
@@ -150,18 +154,16 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
 
         if (IS_MAP(hp, pg)) {
             _cksave(locp, mapp);
-            check_map_page(locp, mapp, pg, hxcheck_errv,
-			    lastmap, lastbit);
+            check_map_page(locp, mapp, pg, hxcheck_errv, lastmap, lastbit);
         } else {
             _cksave(locp, bufp);
-            check_data_page(locp, mapp, pg, hxcheck_errv,
-			    bufp, tmpfp);
+            check_data_page(locp, mapp, pg, hxcheck_errv, bufp, tmpfp);
         }
     }
 
     _cksave(locp, bufp);
     _cksave(locp, mapp);
-    bufp->pgno = 0; // else CHECK in PUTLINK will ABORT
+    bufp->pgno = 0;             // else CHECK in PUTLINK will ABORT
 
     // Scan next[] chains, looking for loops,
     // This tries to be more clever than simply running until
@@ -172,22 +174,22 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
     // have not been fixed!
     for (ph = 1; ph < locp->npages; ++ph) {
         if (IS_HEAD(ph)) {
-	    hash = pghash(ph) | VISITED;
-	    for (pg = ph; (pn = locp->vnext[pg]); pg = pn) {
-		pp = locp->visit + pn/HXPGRATE;
-		if (*pp & VISITED) {
-		    BAD(bad_loop, pn);
-		    PUTLINK(locp, pg, 0);
-		    break;
-		}
-		*pp ^= hash;
-	    }
-		// A TAIL page is allowed multiple visits:
-	    assert(!locp->vnext[pg]);
+            hash = pghash(ph) | VISITED;
+            for (pg = ph; (pn = locp->vnext[pg]); pg = pn) {
+                pp = locp->visit + pn / HXPGRATE;
+                if (*pp & VISITED) {
+                    BAD(bad_loop, pn);
+                    PUTLINK(locp, pg, 0);
+                    break;
+                }
+                *pp ^= hash;
+            }
+            // A TAIL page is allowed multiple visits:
+            assert(!locp->vnext[pg]);
 
-	    if (pg != ph)
-		*pp &= ~VISITED;
-	}
+            if (pg != ph)
+                *pp &= ~VISITED;
+        }
     }
     // At this point, all loops in vnext[] have been broken.
     // as well as in the file if we are REPAIRING.
@@ -198,7 +200,7 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
     // be unlinked.
     for (pg = 1; pg < locp->npages; ++pg) {
         pn = locp->vnext[pg];
-        if (pn && locp->visit[pn/HXPGRATE] & ~VISITED) {
+        if (pn && locp->visit[pn / HXPGRATE] & ~VISITED) {
             BAD(bad_refs, pn);
             PUTLINK(locp, pg, 0);
         }
@@ -206,34 +208,38 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
 
     // Check for duplicate records in adjacent pages.
     if (!hxcheck_errv[bad_loop]) {
-	for (ph = 1; ph < locp->npages; ++ph) {
-	    if (locp->vnext[ph] && IS_HEAD(ph)) {
-		_hxload(locp, srcp, locp->vnext[ph]);
-		_hxload(locp, dstp, ph);
+        for (ph = 1; ph < locp->npages; ++ph) {
+            if (locp->vnext[ph] && IS_HEAD(ph)) {
+                _hxload(locp, srcp, locp->vnext[ph]);
+                _hxload(locp, dstp, ph);
                 if (hxcheck_errv[bad_index])
-                    _hxindexify(locp, dstp, (COUNT*)(dstp->data + DATASIZE(locp->file)) - 1);
+                    _hxindexify(locp, dstp,
+                                (COUNT *) (dstp->data +
+                                           DATASIZE(locp->file)) - 1);
 
-		while (1) {
-		    FOR_EACH_REC(recp, srcp, endp) {
-			if (0 <= _hxfind(locp, dstp, RECHASH(recp), RECDATA(recp), 0))
-			    break;
-		    }
+                while (1) {
+                    FOR_EACH_REC(recp, srcp, endp) {
+                        if (0 <=
+                            _hxfind(locp, dstp, RECHASH(recp), RECDATA(recp),
+                                    0))
+                            break;
+                    }
 
-		    if (recp < endp || !srcp->next) break;
-		    SWAP(srcp, dstp);
-		    _hxload(locp, srcp, dstp->next);
-		}
+                    if (recp < endp || !srcp->next)
+                        break;
+                    SWAP(srcp, dstp);
+                    _hxload(locp, srcp, dstp->next);
+                }
 
-		if (recp < endp) {
-		    BAD(bad_dup_recs, srcp->pgno);
-		    pg = dstp->pgno;
-		    for (; (pn = locp->vnext[pg]); pg = pn)
-			PUTLINK(locp, pg, 0);
-		}
-	    }
-	}
+                if (recp < endp) {
+                    BAD(bad_dup_recs, srcp->pgno);
+                    pg = dstp->pgno;
+                    for (; (pn = locp->vnext[pg]); pg = pn)
+                        PUTLINK(locp, pg, 0);
+                }
+            }
+        }
     }
-
     // The bitmap is now correct. Dump records of
     //  unreferenced nonempty pages, then free those pages.
     for (pg = 0; pg < locp->npages; pg += HXPGRATE) {
@@ -243,25 +249,23 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
                 _cksave(locp, mapp);
                 _hxload(locp, mapp, pg);
             }
-        } else if (!VREF(locp,pg) && xor_map(locp,mapp,pg,0)) {
+        } else if (!VREF(locp, pg) && xor_map(locp, mapp, pg, 0)) {
             BAD(bad_orphan, pg);
             if (REPAIRING(locp)) {
                 _cksave(locp, bufp);
                 _hxload(locp, bufp, pg);
-		if (1 != fwrite(bufp->data, bufp->used,
-				    1, tmpfp))
-		    LEAVE(locp, HXERR_WRITE);
+                if (1 != fwrite(bufp->data, bufp->used, 1, tmpfp))
+                    LEAVE(locp, HXERR_WRITE);
                 clear_page(locp, bufp);
                 xor_map(locp, mapp, pg, 1);
             }
         }
     }
 
-#    undef BAD   // Search no more for errors
+#    undef BAD                  // Search no more for errors
     for (pg = 0; pg < NERRORS; ++pg) {
         if (hxcheck_errv[pg]) {
-            DEBUG("%7d x %s", hxcheck_errv[pg],
-		    hxcheck_namev[pg]);
+            DEBUG("%7d x %s", hxcheck_errv[pg], hxcheck_namev[pg]);
         }
     }
 
@@ -271,7 +275,7 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
 #    define _C    +
     if (!REPAIRING(locp)) {
         LEAVE(locp, FATAL_LIST ? HX_REPAIR
-                  : ERROR_LIST ? HX_READ : HX_UPDATE);
+              : ERROR_LIST ? HX_READ : HX_UPDATE);
     }
 
     _cksave(locp, bufp);
@@ -280,28 +284,28 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
     // Reload dumped records.
     rewind(tmpfp);
     recp = bufp->data;
-	// Prevent hxget/hxput from unlocking file
+    // Prevent hxget/hxput from unlocking file
     HOLD_FILE(hp);
     ret = HXOKAY;
     while (fread(recp, sizeof(HXREC), 1, tmpfp)) {
         leng = RECLENG(recp);
-	if (leng != (int)fread(recp, 1, leng, tmpfp)) {
-	    ret = HXERR_READ;
-	    break;
-	}
+        if (leng != (int)fread(recp, 1, leng, tmpfp)) {
+            ret = HXERR_READ;
+            break;
+        }
         // Catch (and skip) hx_test failures, rather than
         // have hxput call hx_test and return an error.
-	if (!hx_test(hp, recp, leng)) {
-	    DEBUG("skip reinsert: %d: %.*s", ret, leng, recp);
-	    continue;
-	}
+        if (!hx_test(hp, recp, leng)) {
+            DEBUG("skip reinsert: %d: %.*s", ret, leng, recp);
+            continue;
+        }
 
-        ret = hxget(hp, (char*)(uintptr_t)recp, 0);
+        ret = hxget(hp, (char *)(uintptr_t) recp, 0);
         if (!ret)
-	    ret = hxput(hp, recp, leng);
+            ret = hxput(hp, recp, leng);
 
         if ((int)ret < 0)
-	    break;
+            break;
     }
 
     hp->hold = 0;
@@ -310,12 +314,13 @@ hxfix(HXFILE *hp, FILE *tmpfp, int pgsize,
 }
 
 static inline void
-check_data_page(HXLOCAL *locp, HXBUF *mapp, PAGENO pg,
-	      int errv[], HXBUF *bufp, FILE *tmpfp)
+check_data_page(HXLOCAL * locp, HXBUF * mapp, PAGENO pg,
+                int errv[], HXBUF * bufp, FILE * tmpfp)
 {
-    HXFILE	*hp = locp->file;
-    PAGENO	xorsum, hash, *pp;
-    char	*recp, *endp;
+    HXFILE *hp = locp->file;
+    PAGENO  xorsum, hash, *pp;
+    char   *recp, *endp;
+
 #   define BAD(x,p) (DEBUG2("pgno=%u %s",p,hxcheck_namev[x]), ++errv[x])
 
     _hxload(locp, bufp, pg);
@@ -324,33 +329,33 @@ check_data_page(HXLOCAL *locp, HXBUF *mapp, PAGENO pg,
     }
 
     _hxsetRef(locp, bufp->pgno, bufp->next);
-    if (bufp->used && (bufp->used < MINRECSIZE ||
-                       bufp->used > DATASIZE(hp))) {
+    if (bufp->used && (bufp->used < MINRECSIZE || bufp->used > DATASIZE(hp))) {
         BAD(bad_used, pg);
         clear_page(locp, bufp);
-	recover(locp, bufp, tmpfp);
+        recover(locp, bufp, tmpfp);
     }
-
     // Check that (data) is sane:
     // - RECSIZEs are reasonable
     // - RECHASH matches hash(rec)
     // - sum of RECSIZEs is (used)
     // - count of recs is (recs)
     int     recs = 0;
+
     FOR_EACH_REC(recp, bufp, endp) {
-        unsigned   size = RECSIZE(recp);
-        if (size < MINRECSIZE || size > (unsigned)(endp-recp)) {
+        unsigned size = RECSIZE(recp);
+
+        if (size < MINRECSIZE || size > (unsigned)(endp - recp)) {
             BAD(bad_rec_size, pg);
             break;
         }
 
-	if (!hx_test(hp, RECDATA(recp), size - sizeof(HXREC))) {
+        if (!hx_test(hp, RECDATA(recp), size - sizeof(HXREC))) {
             BAD(bad_rec_test, pg);
-	    break;
-	}
+            break;
+        }
 
         hash = hx_hash(hp, RECDATA(recp));
-        if (hash != (PAGENO)RECHASH(recp)) {
+        if (hash != (PAGENO) RECHASH(recp)) {
             BAD(bad_rec_hash, pg);
             break;
         }
@@ -367,9 +372,8 @@ check_data_page(HXLOCAL *locp, HXBUF *mapp, PAGENO pg,
         bufp->used = recp - bufp->data;
         bufp->recs = recs;
         STAIN(bufp);
-	recover(locp, bufp, tmpfp);
+        recover(locp, bufp, tmpfp);
     }
-
     // Check whether this page has multiple heads.
     //  For nonheads, store xor(heads).
     _hxfindHeads(locp, bufp);
@@ -378,40 +382,37 @@ check_data_page(HXLOCAL *locp, HXBUF *mapp, PAGENO pg,
             xorsum ^= pghash(*pp++);
         }
 
-        locp->visit[pg/HXPGRATE] = xorsum & ~VISITED;
+        locp->visit[pg / HXPGRATE] = xorsum & ~VISITED;
 
-    } else if (bufp->used &&
-                (locp->vprev[1] || pg != locp->vprev[0])) {
+    } else if (bufp->used && (locp->vprev[1] || pg != locp->vprev[0])) {
         BAD(bad_head_rec, pg);
         if (REPAIRING(locp)
-	    && 1 != fwrite(bufp->data, bufp->used, 1, tmpfp))
-	    LEAVE(locp, HXERR_WRITE);
+            && 1 != fwrite(bufp->data, bufp->used, 1, tmpfp))
+            LEAVE(locp, HXERR_WRITE);
 
         clear_page(locp, bufp);
     }
-
     // From here on, nothing changes bufp->used
     if (!bufp->used && bufp->next) {
         BAD(bad_free_next, pg);
         BUFLINK(locp, bufp, 0);
     }
-
     // Check that bytes beyond [used] are correct.
-    int   hsize = HIND_SIZE(hp, bufp);
-    COUNT *act = (COUNT*)(bufp->data + DATASIZE(hp)) - hsize;
-    COUNT exp[hsize];
+    int     hsize = HIND_SIZE(hp, bufp);
+    COUNT  *act = (COUNT *) (bufp->data + DATASIZE(hp)) - hsize;
+    COUNT   exp[hsize];
+
     _hxindexify(locp, bufp, exp + hsize - 1);
     if (memcmp(act, exp, hsize * sizeof(COUNT))) {
         BAD(bad_index, pg);
         if (tmpfp) {
-            memcpy(act, exp, hsize*sizeof(COUNT));
+            memcpy(act, exp, hsize * sizeof(COUNT));
             STAIN(bufp);
         }
     }
-
     // Check whether page is correct in bitmap
     if (!IS_HEAD(pg)
-            && !bufp->used != !xor_map(locp,mapp,pg,0)) {
+        && !bufp->used != !xor_map(locp, mapp, pg, 0)) {
         BAD(bufp->used ? bad_free_bit : bad_used_bit, pg);
         xor_map(locp, mapp, pg, 1);
     }
@@ -419,10 +420,10 @@ check_data_page(HXLOCAL *locp, HXBUF *mapp, PAGENO pg,
 }
 
 static inline void
-check_map_page(HXLOCAL *locp, HXBUF *mapp, PAGENO pg,
-	     int errv[], PAGENO lastmap, int lastbit)
+check_map_page(HXLOCAL * locp, HXBUF * mapp, PAGENO pg,
+               int errv[], PAGENO lastmap, int lastbit)
 {
-    HXFILE	*hp = locp->file;
+    HXFILE *hp = locp->file;
 
 #    define BAD(x,p) (DEBUG2("pgno=%u %s",p,hxcheck_namev[x]), ++errv[x])
     _hxload(locp, mapp, pg);
@@ -433,8 +434,7 @@ check_map_page(HXLOCAL *locp, HXBUF *mapp, PAGENO pg,
         STAIN(mapp);
     }
 
-    if (mapp->used >= DATASIZE(hp) ||
-	    !(mapp->data[mapp->used] & 0x01)) {
+    if (mapp->used >= DATASIZE(hp) || !(mapp->data[mapp->used] & 0x01)) {
         BAD(bad_map_self, pg);
         mapp->data[mapp->used] |= 0x01;
         STAIN(mapp);
@@ -448,22 +448,23 @@ check_map_page(HXLOCAL *locp, HXBUF *mapp, PAGENO pg,
             mapp->data[pos] &= ~mask;
             STAIN(mapp);
         } else {
-            do ++pos;
+            do
+                ++pos;
             while ((unsigned)pos < DATASIZE(hp)
-                && !mapp->data[pos]);
+                   && !mapp->data[pos]);
         }
 
         if ((unsigned)pos < DATASIZE(hp)) {
             BAD(bad_overmap, pg);
-	    memset(mapp->data+pos, 0, DATASIZE(hp)-pos);
+            memset(mapp->data + pos, 0, DATASIZE(hp) - pos);
             STAIN(mapp);
         }
     }
-#    undef BAD   // Search no more for errors
+#    undef BAD                  // Search no more for errors
 }
 
 static void
-clear_page(HXLOCAL *locp, HXBUF *bufp)
+clear_page(HXLOCAL * locp, HXBUF * bufp)
 {
     bufp->orig = DATASIZE(locp->file);
     bufp->used = bufp->recs = 0;
@@ -471,62 +472,65 @@ clear_page(HXLOCAL *locp, HXBUF *bufp)
     BUFLINK(locp, bufp, 0);
 }
 
-
 static void
-recover(HXLOCAL *locp, HXBUF const *bufp, FILE *fp)
+recover(HXLOCAL * locp, HXBUF const *bufp, FILE * fp)
 {
-    HXFILE	*hp = locp->file;
+    HXFILE *hp = locp->file;
 
     if (!fp || !hp->test)
-	return;
+        return;
 
-    char const	*recp = bufp->data + bufp->used;
-    char const	*endp = bufp->data + DATASIZE(hp);
+    char const *recp = bufp->data + bufp->used;
+    char const *endp = bufp->data + DATASIZE(hp);
 
     while (recp < endp) {
 
-	if (!RECHASH(recp) || !RECLENG(recp)) {
+        if (!RECHASH(recp) || !RECLENG(recp)) {
 
-	    recp += sizeof(PAGENO) - 1;
+            recp += sizeof(PAGENO) - 1;
 
-	} else if (RECSIZE(recp) > (unsigned)(endp - recp)
-		   || !hx_test(hp, RECDATA(recp), RECLENG(recp))
-		   ||  hx_hash(hp, recp) != RECHASH(recp)) {
-	    ++recp;
+        } else if (RECSIZE(recp) > (unsigned)(endp - recp)
+                   || !hx_test(hp, RECDATA(recp), RECLENG(recp))
+                   || hx_hash(hp, recp) != RECHASH(recp)) {
+            ++recp;
 
-	} else {
-	    if (1 != fwrite(recp, RECSIZE(recp), 1, fp))
-		LEAVE(locp, HXERR_WRITE);
+        } else {
+            if (1 != fwrite(recp, RECSIZE(recp), 1, fp))
+                LEAVE(locp, HXERR_WRITE);
 
-	    recp += RECSIZE(recp);
-	}
+            recp += RECSIZE(recp);
+        }
     }
 }
 
 static int
-xor_map(HXLOCAL *locp, HXBUF *mapp, PAGENO pg, int flip)
+xor_map(HXLOCAL * locp, HXBUF * mapp, PAGENO pg, int flip)
 {
-    int         pos, mask;
-    PAGENO      mappg = _hxmap(locp->file, pg, &pos);
+    int     pos, mask;
+    PAGENO  mappg = _hxmap(locp->file, pg, &pos);
+
     (void)mappg;
     assert(mappg == mapp->pgno);
     mask = 1 << (pos & 7);
     pos >>= 3;
     if (flip)
-	mapp->data[pos] ^= mask, STAIN(mapp);
+        mapp->data[pos] ^= mask, STAIN(mapp);
 
     return mapp->data[pos] & mask;
 }
 
 // pghash: hash a pageno; used in detecting linkage errors.
-static PAGENO
+static  PAGENO
 pghash(PAGENO pg)
 {
-    PAGENO	hash = 2166136261U;
+    PAGENO  hash = 2166136261U;
 
-    hash = (hash ^ (pg & 0xFF)) * 16777619; pg >>= 8;
-    hash = (hash ^ (pg & 0xFF)) * 16777619; pg >>= 8;
-    hash = (hash ^ (pg & 0xFF)) * 16777619; pg >>= 8;
+    hash = (hash ^ (pg & 0xFF)) * 16777619;
+    pg >>= 8;
+    hash = (hash ^ (pg & 0xFF)) * 16777619;
+    pg >>= 8;
+    hash = (hash ^ (pg & 0xFF)) * 16777619;
+    pg >>= 8;
     hash = (hash ^ (pg & 0xFF)) * 16777619;
     hash += hash << 13;
     hash ^= hash >> 7;
@@ -535,4 +539,5 @@ pghash(PAGENO pg)
     hash += hash << 5;
     return hash;
 }
+
 //EOF

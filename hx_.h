@@ -24,13 +24,13 @@
 #define HX__H
 #include "hx.h"
 
-int     diff(char const*, char const*, char const*, int);
-HXHASH  hash(char const*, char const*, int);
-int     load(char *, int recsize, char const *, char const*, int);
-int     save(char const*, int reclen, char *, int bufsize, char const*, int);
-int     test(char const*, int reclen, char const*, int);
+int     diff(char const *, char const *, char const *, int);
+HXHASH  hash(char const *, char const *, int);
+int     load(char *, int recsize, char const *, char const *, int);
+int     save(char const *, int reclen, char *, int bufsize, char const *, int);
+int     test(char const *, int reclen, char const *, int);
 
 #ifndef __unused
 #   define __unused __attribute__((unused))
 #endif
-#endif//HX__H
+#endif //HX__H

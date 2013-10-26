@@ -43,29 +43,30 @@
 #define CREATE    (O_CREAT|O_RDWR|O_BINARY|O_TRUNC)
 
 HXRET
-hxcreate(char const*name, int mode, int pgsize,
-     char const*udata, int uleng)
+hxcreate(char const *name, int mode, int pgsize, char const *udata, int uleng)
 {
-    if (pgsize && (pgsize < HX_MIN_PGSIZE || pgsize&(pgsize-1)))
-    	return HXERR_BAD_REQUEST;
+    if (pgsize && (pgsize < HX_MIN_PGSIZE || pgsize & (pgsize - 1)))
+        return HXERR_BAD_REQUEST;
 
     int     fd = open(name, CREATE, mode & 0777);
+
     if (fd < 0)
-    	return HXERR_CREATE;
+        return HXERR_CREATE;
     if (!pgsize) {
         struct stat sb;
+
         if (fstat(fd, &sb))
             return HXERR_CREATE;
         pgsize = sb.st_blksize;
     }
 
-    HXPAGE         *pp = (HXPAGE *) calloc(1, pgsize);
-    HXROOT         *rp = (HXROOT *) pp;
-    char           *dp = (char *)(rp + 1);
+    HXPAGE *pp = (HXPAGE *) calloc(1, pgsize);
+    HXROOT *rp = (HXROOT *) pp;
+    char   *dp = (char *)(rp + 1);
 
     if (uleng >= (int)(pgsize - sizeof(HXROOT))) {
         unlink(name);
-    	return HXERR_BAD_REQUEST;
+        return HXERR_BAD_REQUEST;
     }
 
     STSH(pgsize, &rp->pgsize);
@@ -73,12 +74,15 @@ hxcreate(char const*name, int mode, int pgsize,
     STSH(uleng, &rp->uleng);
 
     int     ret = HXOKAY;
+
     memcpy(dp, udata, uleng);
-    dp[uleng] = 0x01; // allocate page 0 (this page)
-    if (pgsize != write(fd, (char *)rp, pgsize)) ret = -1;
+    dp[uleng] = 0x01;           // allocate page 0 (this page)
+    if (pgsize != write(fd, (char *)rp, pgsize))
+        ret = -1;
     memset((char *)pp, 0, pgsize);
     pp->next = 0;
-    if (pgsize != write(fd, (char *)pp, pgsize)) ret = -1;
+    if (pgsize != write(fd, (char *)pp, pgsize))
+        ret = -1;
 
     free(pp);
     close(fd);

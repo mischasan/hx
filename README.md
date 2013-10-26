@@ -46,16 +46,17 @@ Download the source, type "gmake".
 "gmake install" exports bin/chx, include/hx.h, lib/libhx.a to $DESTDIR/.
 (If you're interested in the GNUmakefile and rules.mk,
  check my blog posts on non-recursive make, at mischasan.wordpress.com.)
-
-If you want to run test programs outside "make", be sure to set LD_LIBRARY_PATH
-to include the directory containing hx_.so
  
 See the file "hxample.c" for examples of record-API usage.
 
 The standalone command "chx" can exercise the entire API, so "chx.c" is a useful reference
 for the non-record-oriented API calls, like "hxshape" and "hxfix".
 
-"hx_.c" is the default record-type implementation, which is used if you create a HXFILE without specifying a record type.
+"hx_.c" is the default record-type implementation, which is used
+if you create a HXFILE without specifying a record type.
+
+To run "chx", or run test programs outside "make", be sure to set
+$LD_LIBRARY_PATH to include the directory containing hx_.so
 
 HISTORY
 -------
@@ -72,5 +73,5 @@ Win32 memory-mapped files. Re-implementing some low-level routines would bring t
 ACKNOWLEDGEMENTS
 ----------------
 
-I'd like to thank Dr. Paul (Per-Ake) Larson, formerly at the University of Waterloo, for giving me the fundamentals 
-for taking on this project.
+I'd like to thank Dr. Paul (Per-Ake) Larson, formerly at the University of Waterloo,
+for giving me the fundamentals for taking on this project.

@@ -134,7 +134,7 @@ my_vasprintf(char **strp, const char *fmt, va_list ap)
     char buffer[1024];
     int  ret;
 
-    ret = vsnprintf(buffer, sizeof(buffer), fmt, ap);
+    ret = vsnprintf(buffer, sizeof buffer, fmt, ap);
 
     if ((*strp = malloc(ret + 1)) == NULL) {
         return -1;

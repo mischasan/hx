@@ -413,7 +413,7 @@ static inline int
 FILE_HELD(HXFILE const *hp)
 {
     return hp->hold == HXPGRATE;
-}  
+}
 
 //FITS and _FITS takes signed (int) used, because hxput tests shrinkage (dused<0)
 static inline unsigned
@@ -509,8 +509,8 @@ MAP_BUF(HXFILE const *hp, HXBUF * bufp)
 static inline PAGENO
 MASK(PAGENO x)
 {
-    if (!x--)
-        return 0;
+    //assert(x > 0);
+    --x;
 #if !defined(__BSD_VISIBLE) && defined(__x86_64)
   asm("bsrl %0,%0": "=a"(x):"a"(x));
     x = ~(-1 << (x + 1));
@@ -561,19 +561,22 @@ SCANNING(HXFILE const *hp)
     return ! !hp->buffer.page;
 }
 
-//XXX
+// A page will be split multiple times as a file grows.
+//  SPLIT_HI computes the next file size where the given
+//  page will be split. To be used in _hxlockset.
 static inline PAGENO
 SPLIT_HI(HXLOCAL *locp, PAGENO pg)
-{ // is locp->mask always correct when SPLIT_HI is called?
+{
     pg = _hxf2d(pg);
-    PAGENO delta = (locp->mask + 1) >> (pg <= locp->mask);
+    PAGENO delta = locp->mask + 1;
+    if (pg <= locp->mask)
+        delta >>= 1;
     return _hxd2f(pg + delta);
 }
 
 static inline PAGENO
-SPLIT_LO(HXLOCAL *locp, PAGENO pg)
+SPLIT_LO(PAGENO pg)
 {
-    (void)locp;
     pg = _hxf2d(pg);
     return _hxd2f(pg - (MASK(pg) + 1)/2);
 }
@@ -581,7 +584,7 @@ SPLIT_LO(HXLOCAL *locp, PAGENO pg)
 static inline PAGENO
 SPLIT_PAGE(HXLOCAL const *locp)
 {
-    return _hxd2f(locp->dpages - (locp->mask + 1)/2);   //XXX -1???
+    return _hxd2f(locp->dpages - (locp->mask + 1)/2);
 }
 
 #define TWIXT(x,a,z) ((unsigned)((x)-(a)) <= (unsigned)(z)-(a))

@@ -149,10 +149,9 @@ _hxfind(HXLOCAL * locp, HXBUF const *bufp, HXHASH rechash,
     return hind[-i] - 1;
 }
 
-// _hxhead: calculate pgno of head-of-chain for a given
-//            record hash.
-// This first reverses the hash, since the low bits 
-// of the hash are now used for in-page indexing.
+// _hxhead: calculate pgno of head-of-chain for a given record hash.
+//  This first reverses the hash, since the low bits of the hash
+//  are now used for in-page indexing.
 PAGENO
 _hxhead(HXLOCAL const *locp, HXHASH hash)
 {
@@ -349,7 +348,6 @@ _hxpginfo(HXLOCAL * locp, PAGENO pg)
 }
 
 // _hxpoint: update loc.head from (npages,hash).
-//  
 void
 _hxpoint(HXLOCAL * locp)
 {
@@ -441,8 +439,8 @@ _hxsize(HXLOCAL * locp)
     locp->mask = MASK(locp->dpages);
 
     if (npages && npages != locp->npages)
-        DEBUG2("npages changes: %d<%d> to %d<%d>",
-               npages, split, locp->npages, SPLIT_PAGE(locp));
+        DEBUG2("npages changes: %d<%d> to %d<%d> mask=%d",
+               npages, split, locp->npages, SPLIT_PAGE(locp), locp->mask);
 }
 
 //EOF

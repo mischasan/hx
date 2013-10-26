@@ -47,7 +47,7 @@ char const *errname[] = {
     /*_75*/ "EPROGMISMATCH", "EPROCUNAVAIL",    "ENOLCK",       "ENOSYS",          "EFTYPE",
     /*_80*/ "EAUTH",         "ENEEDAUTH",       "EIDRM",        "ENOMSG",          "EOVERFLOW",
     /*_85*/ "ECANCELED",     "EILSEQ",          "ENOATTR",      "EDOOFUS",         "EBADMSG",
-    /*_90*/ "EMULTIHOP",     "ENOLINK",         "EPROTO"                           
+    /*_90*/ "EMULTIHOP",     "ENOLINK",         "EPROTO"
 #elif defined(__linux__)
     /*_30*/ "EROFS",         "EMLINK",          "EPIPE",        "EDOM",            "ERANGE",
     /*_35*/ "EDEADLK",       "ENAMETOOLONG",    "ENOLCK",       "ENOSYS",          "ENOTEMPTY",
@@ -69,7 +69,7 @@ char const *errname[] = {
     /*115*/ "EINPROGRESS",   "ESTALE",          "EUCLEAN",      "ENOTNAM",         "ENAVAIL",
     /*120*/ "EISNAM",        "EREMOTEIO",       "EDQUOT",       "ENOMEDIUM",       "EMEDIUMTYPE",
     /*125*/ "ECANCELED",     "ENOKEY",          "EKEYEXPIRED",  "EKEYREVOKED",     "EKEYREJECTED",
-    /*130*/ "EOWNERDEAD",    "ENOTRECOVERABLE", "ERFKILL"                          
+    /*130*/ "EOWNERDEAD",    "ENOTRECOVERABLE", "ERFKILL"
 #endif
 };
 
@@ -151,8 +151,8 @@ getprogname(void)
         char    buf[999];
         int     len;
         sprintf(buf, "/proc/%d/exe", getpid());
-        len = readlink(buf, buf, sizeof(buf));
-        if (len < 0 || len == sizeof(buf))
+        len = readlink(buf, buf, sizeof buf);
+        if (len < 0 || len == sizeof buf)
             return NULL;
         buf[len] = 0;
         char    *cp = strrchr(buf, '/');

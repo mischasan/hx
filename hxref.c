@@ -26,18 +26,18 @@
 
 //--------------|---------------------------------------------
 void
-_hxinitRefs(HXLOCAL *locp)
+_hxinitRefs(HXLOCAL * locp)
 {
-    int	novers	= (locp->npages - 1) / HXPGRATE + 1;
-    int	maxrefs = DATASIZE(locp->file) / MINRECSIZE;
+    int     novers = (locp->npages - 1) / HXPGRATE + 1;
+    int     maxrefs = DATASIZE(locp->file) / MINRECSIZE;
 
-    locp->vnext = calloc(locp->npages,	sizeof(PAGENO));
-    locp->vprev = calloc(maxrefs,	sizeof(PAGENO));
-    locp->vrefs = calloc(novers,	sizeof(COUNT));
+    locp->vnext = calloc(locp->npages, sizeof(PAGENO));
+    locp->vprev = calloc(maxrefs, sizeof(PAGENO));
+    locp->vrefs = calloc(novers, sizeof(COUNT));
 }
 
 void
-_hxsetRef(HXLOCAL *locp, PAGENO pg, PAGENO next)
+_hxsetRef(HXLOCAL * locp, PAGENO pg, PAGENO next)
 {
     --VREF(locp, locp->vnext[pg]);
     ++VREF(locp, next);
@@ -46,9 +46,9 @@ _hxsetRef(HXLOCAL *locp, PAGENO pg, PAGENO next)
 }
 
 PAGENO
-_hxgetRef(HXLOCAL const*locp, PAGENO pg, PAGENO tail)
+_hxgetRef(HXLOCAL const *locp, PAGENO pg, PAGENO tail)
 {
-    PAGENO        ret = pg;
+    PAGENO  ret = pg;
 
     while (locp->vnext[ret] != tail) {
         ret = locp->vnext[ret];
@@ -59,10 +59,10 @@ _hxgetRef(HXLOCAL const*locp, PAGENO pg, PAGENO tail)
 }
 
 int
-_hxfindHeads(HXLOCAL const *locp, HXBUF const*bufp)
+_hxfindHeads(HXLOCAL const *locp, HXBUF const *bufp)
 {
-    PAGENO      head, *pp, *zprev = locp->vprev;
-    char        *recp, *endp;
+    PAGENO  head, *pp, *zprev = locp->vprev;
+    char   *recp, *endp;
 
     FOR_EACH_REC(recp, bufp, endp) {
         head = _hxhead(locp, RECHASH(recp));
@@ -79,13 +79,14 @@ _hxfindHeads(HXLOCAL const *locp, HXBUF const*bufp)
 //  whose (next) links are (pg), for every chain that some
 //  record in (bufp) hashes to.
 void
-_hxfindRefs(HXLOCAL *locp, HXBUF const*bufp, PAGENO pg)
+_hxfindRefs(HXLOCAL * locp, HXBUF const *bufp, PAGENO pg)
 {
-    PAGENO         *pp;
+    PAGENO *pp;
 
     _hxfindHeads(locp, bufp);
     for (pp = locp->vprev; *pp; ++pp) {
         *pp = _hxgetRef(locp, *pp, pg);
     }
 }
+
 // EOF

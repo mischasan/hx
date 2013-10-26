@@ -2,10 +2,15 @@
 *.gcda
 *.gcno
 *.gcov
+*.fail
+*.pass
 *.out
+*.tab
 *.so
 *.hx
 *.bak
+*.swp
+*.patch
 frog
 toad
 newt

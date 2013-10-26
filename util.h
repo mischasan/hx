@@ -18,7 +18,7 @@
 // IF YOU ARE UNABLE TO WORK WITH GPL2, CONTACT ME.
 //-------------------------------------------------------------------
 
-// This is a subset of util/msutil.h 
+// This is a subset of util/msutil.h
 #ifndef UTIL_H
 #define UTIL_H
 
@@ -29,10 +29,10 @@
 #   define FPTR     "l"
 #elif __SIZEOF_POINTER__ == __SIZEOF_INT__
 #   define FPTR
-#elif __SIZEOF_POINTER__ == __SIZEOF_LONG__ 
+#elif __SIZEOF_POINTER__ == __SIZEOF_LONG__
 #   define FPTR     "l"
 #else
-#   error need to define FPTR 
+#   error need to define FPTR
 #endif
 
 // This does not work on gcc 4.1 (64)
@@ -43,7 +43,7 @@
 #elif __SIZEOF_SIZE_T__ == __SIZEOF_LONG__
 #   define FSIZE    "l"
 #else
-#   error need to define FSIZE 
+#   error need to define FSIZE
 #endif
 
 #if __LONG_MAX__ == 9223372036854775807L

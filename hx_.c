@@ -24,26 +24,26 @@
 #include "hx_.h"
 
 int
-diff(char const*ap, char const*bp, char const*udata, int uleng)
+diff(char const *ap, char const *bp, char const *udata, int uleng)
 {
     (void)udata, (void)uleng;
     while (1) {
-	if (*ap != *bp)
-	    return 1;
-	if (*ap == 0)
-	    return 0;
-	++ap, ++bp;
+        if (*ap != *bp)
+            return 1;
+        if (*ap == 0)
+            return 0;
+        ++ap, ++bp;
     }
 }
 
 HXHASH
-hash(char const*recp, char const*udata, int uleng)
+hash(char const *recp, char const *udata, int uleng)
 {
     (void)udata, (void)uleng;
     HXHASH  ret = 2166136261U;
 
     while (*recp && *recp != 0)
-	ret = ret * 16777619U ^ *recp++;
+        ret = ret * 16777619U ^ *recp++;
 
     // For keys < 5bytes, scrambling the bits is reqd:
     ret += ret << 13;
@@ -55,43 +55,45 @@ hash(char const*recp, char const*udata, int uleng)
 }
 
 int
-load(char *recp, int recsize, char const *buf,
-	char const*udata, int uleng)
+load(char *recp, int recsize, char const *buf, char const *udata, int uleng)
 {
     (void)udata, (void)uleng;
     // buf points to a string of the form "x+\tx*\0"
-    int		buflen = strlen(buf) + 1;
+    int     buflen = strlen(buf) + 1;
 
     if (buflen <= recsize) {
-	char *valpos = strchr(strcpy(recp, buf), '\t');
-	if (valpos)
-	    *valpos = 0;
+        char   *valpos = strchr(strcpy(recp, buf), '\t');
+
+        if (valpos)
+            *valpos = 0;
     }
 
-    return  buflen;
+    return buflen;
 }
 
 int
-save(char const*recp, int reclen, char *buf, int bufsize,
-	char const*udata, int uleng)
+save(char const *recp, int reclen, char *buf, int bufsize,
+     char const *udata, int uleng)
 {
     (void)udata, (void)uleng;
-    int	    keylen = strlen(recp) + 1;
+    int     keylen = strlen(recp) + 1;
 
     memcpy(buf, recp, reclen < bufsize ? reclen : bufsize);
     if (keylen <= bufsize)
-	buf[keylen - 1] = '\t';
+        buf[keylen - 1] = '\t';
     buf[bufsize - 1] = 0;
 
-    return  reclen;
+    return reclen;
 }
 
 int
-test(char const*recp, int reclen, char const*udata, int uleng)
+test(char const *recp, int reclen, char const *udata, int uleng)
 {
     (void)udata, (void)uleng;
-    char    *cp = memchr(recp, 0, reclen);
-    return  cp && !recp[reclen-1] 
-            && reclen == 2 + (cp - recp) + (int)strlen(cp + 1) 
-            && !memchr(recp, '\n', reclen);
+    char   *cp = memchr(recp, 0, reclen);
+
+    int ret = cp && !recp[reclen - 1]
+                && reclen == 2 + (cp - recp) + (int)strlen(cp + 1)
+                && !memchr(recp, '\n', reclen);
+    return ret;
 }

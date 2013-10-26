@@ -19,8 +19,8 @@
 //-------------------------------------------------------------------------------
 #include "hx.h"
 
-#define  NELS(v) (int)(sizeof(v) / sizeof(v[0]))
-char const*
+#define  NELS(v) (int)(sizeof v / sizeof v[0])
+char const *
 hxerror(HXRET ret)
 {
 #   undef   _C
@@ -28,38 +28,39 @@ hxerror(HXRET ret)
 #   define  _C	    ,
 #   define  _E(x)   #x
     static char const *errv[] = { "ok", HXERRS };
-    static char num[11]; 
+    static char num[11];
+
     if (ret > 0 || -ret >= NELS(errv))
-	return (sprintf(num, "%d", ret), num);
-    return  errv[-ret];
+        return (sprintf(num, "%d", ret), num);
+    return errv[-ret];
 }
 
-char const*
+char const *
 hxmode(int mode)
 {
     static char const *modev[] = {
-	"READ",
-	"UPDATE",
-	"CHECK",
-	"REPAIR",
-	"READ,MMAP",
-	"UPDATE,MMAP",
-	"INVALID:CHECK+MMAP",
-	"INVALID:REPAIR+MMAP",
-	"DUBIOUS:READ+MPROTECT",
-	"DUBIOUS:UPDATE+MPROTECT",
-	"INVALID:CHECK+MPROTECT",
-	"INVALID:REPAIR+MPROTECT",
-	"READ+MPROTECT",
-	"UPDATE+MPROTECT",
-	"INVALID:CHECK+MMAP+MPROTECT",
-	"INVALID:REPAIR+MMAP+MPROTECT",
-	"DUBIOUS:READ+FSYNC",
-	"UPDATE,FSYNC",
-	"DUBIOUS:CHECK+FSYNC",
-	"REPAIR,FSYNC",
+        "READ",
+        "UPDATE",
+        "CHECK",
+        "REPAIR",
+        "READ,MMAP",
+        "UPDATE,MMAP",
+        "INVALID:CHECK+MMAP",
+        "INVALID:REPAIR+MMAP",
+        "DUBIOUS:READ+MPROTECT",
+        "DUBIOUS:UPDATE+MPROTECT",
+        "INVALID:CHECK+MPROTECT",
+        "INVALID:REPAIR+MPROTECT",
+        "READ+MPROTECT",
+        "UPDATE+MPROTECT",
+        "INVALID:CHECK+MMAP+MPROTECT",
+        "INVALID:REPAIR+MMAP+MPROTECT",
+        "DUBIOUS:READ+FSYNC",
+        "UPDATE,FSYNC",
+        "DUBIOUS:CHECK+FSYNC",
+        "REPAIR,FSYNC",
     };
 
-    return  mode < 0		? hxerror(mode) :
-	    mode < NELS(modev)	? modev[mode]	: "INVALID";
+    return mode < 0 ? hxerror(mode) :
+        mode < NELS(modev) ? modev[mode] : "INVALID";
 }

@@ -29,6 +29,8 @@ CPPFLAGS.debug  = -UNDEBUG
 
 CFLAGS.profile  = -pg -DNDEBUG
 LDFLAGS.profile = -pg
+# PROFILE tests get stats on syscalls in their .pass files.
+exec.profile	= strace -cf
 
 LDLIBS.FreeBSD  = -lm
 LDLIBS.Linux    = -ldl -lm -lresolv
@@ -85,6 +87,7 @@ Install         = if [ "$(strip $2)" ]; then mkdir -p $1; pax -rw -pe -s:.*/:: $
 # If you believe in magic vars, e.g. "myutil.bin = prog1 prog2 prog3"
 # causing "myutil.install" to copy those files to $(DESTDIR)/bin
 # then here's your automagic "install":
+#XXX: install man/man3/hx.3 etc!
 %.install       : %.all $(%.bin) $(%.etc) $(%.include) $(%.ini) $(%.lib) $(%.sbin) \
                 ;@$(call Install,$(DESTDIR)/bin,    $($*.bin))  \
                 ; $(call Install,$(DESTDIR)/etc,    $($*.etc))  \
@@ -97,8 +100,8 @@ profile         : BLD := profile
 %.profile       : %.test    ;@for x in $($*.test:.pass=); do gprof -b $$x >$$x.prof; done
 
 %.test          : $(%.test)
-# GMAKE trims leading "./" from $*. Sigh.
-%.pass          : %         ; rm -f $@; $(*D)/$(*F) >& $*.fail && mv -f $*.fail $@
+# GMAKE trims leading "./" from $*, hence $*(*D)/$(*F). Sigh.
+%.pass          : %         ; rm -f $@; $(exec.$(BLD)) $(*D)/$(*F) >$*.fail 2>&1 && mv -f $*.fail $@
 
 # To build a .so, "make clean" first, to ensure all .o files compiled with -fPIC
 %.so            : CFLAGS := -fPIC $(filter-out $(CFLAGS.cover) $(CFLAGS.profile), $(CFLAGS))
@@ -116,16 +119,19 @@ profile         : BLD := profile
 
 #---------------- TOOLS:
 # NOTE: "source" MUST be set with "=", not ":=", else MAKE recurses infinitely.
-#source          = $(filter-out %.d, $(shell ls $((MAKEFILE_LIST); $(MAKE) -nps all test cover profile | sed -n '/^. Not a target/{n;/^[^.*][^ ]*:/s/:.*//p;}' | LC_ALL=C sort -u)))
-source          = $(filter-out %.d, $(shell $(MAKE) -nps all test cover profile | sed -n '/^. Not a target/{n;/^[^.*][^ ]*:/s/:.*//p;}' | LC_ALL=C sort -u)))
+source          = $(filter-out %.d, $(shell $(MAKE) -nps all test cover profile | sed -n '/^. Not a target/{n;/^[^.*][^ ]*:/s/:.*//p;}' | LC_ALL=C sort -u))
+
 # gccdefs : all gcc internal #defines.
 gccdefs         :;@$(CC) $(CPPFLAGS) -E -dM - </dev/null | cut -c8- | sort
-# sh : invoke a shell within the makefile's env:
-sh   		:;@$(SHELL)
-tags            :; ctags $(filter %.c,$(source)) $(filter %.h,$(source))
 
-# %.ii lists all (recursive) #included files; e.g.: "make /usr/include/errno.h.ii"
-%.ii            : %         ;@ls -1 2>&- `$(CC) $(CPPFLAGS) -M $*` ||:
+# sh : invoke a shell within the makefile's env:
+sh   		:; PS1='$(PS1) [make] ' $(SHELL)
+
+# tags : requires $(source) hence requires *.d, to find all relevant .h files
+tags            : all; @ctags `ls $(source) 2>/dev/null | grep '\.[ch]$$' `
+
+# %.I lists all (recursive) #included files; e.g.: "make /usr/include/errno.h.I"
+%.I             : %         ;@ls -1 2>&- `$(CC) $(CPPFLAGS) -M $*` ||:
 %.i             : %.c       ; $(COMPILE.c) -E -o $@ $<
 %.s             : %.c       ; $(COMPILE.c) -S -o $@ $< && deas $@
 
