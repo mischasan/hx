@@ -1,4 +1,13 @@
 -:[bs]ug  +:done  x:dropped  ^:forwarded  v:with-history #:note  ?:question
+
+Mon Nov 27 2013
+- hxlox improvements
+- hxlock(hp) that lets you bypass all lock calls --- released by hxrel.
+  Typically used by one-writer/many-readers, where the writer process signals
+  all readers to release their persistent locks, falling back to intra-call locks,
+  which are slower but permit readers to continue while writer does its updates
+  using intra-call locks.
+
 Sun Oct 20 2013
 - hxbuild should use mmap'd file.
 
