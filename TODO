@@ -1,5 +1,8 @@
 -:[bs]ug  +:done  x:dropped  ^:forwarded  v:with-history #:note  ?:question
 
+Thu Dec 05 2013
+- simplify hxlib: dlopen actually does all that LD_LIBRARY_PATH traversal itself (!)
+
 Mon Nov 27 2013
 - hxlox improvements
 - hxlock(hp) that lets you bypass all lock calls --- released by hxrel.
